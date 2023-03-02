@@ -58,10 +58,7 @@ class nngp {
       dag<Type>& pred_g,
       vector<int>& pred_t,
       array<Type>& pred_re,
-      time_series<Type>& ts,
-      vector<vector<Type> >& this_w,
-      vector<vector<Type> >& conditional_mean,
-      vector<matrix<Type> >& conditional_var
+      time_series<Type>& ts
     );
 };
 
@@ -196,10 +193,7 @@ Type nngp<Type>::prediction_loglikelihood(
     dag<Type>& pred_g,
     vector<int>& pred_t,
     array<Type>& pred_re,
-    time_series<Type>& ts,
-    vector<vector<Type> >& this_w,
-    vector<vector<Type> >& conditional_mean,
-    vector<matrix<Type> >& conditional_var
+    time_series<Type>& ts
     ) {
   Type pred_ll = 0.0;
   for(int i = 0; i < pred_g.size(); i++) {
@@ -241,11 +235,6 @@ Type nngp<Type>::prediction_loglikelihood(
         node.re.col(v),
         node.mean.col(v)
       );
-      if( v == 1 ) {
-        this_w(i) = node.re;
-        conditional_mean(i) = node.mean;
-        conditional_var(i) = cn.conditional_cov();
-      } else {}
     }
   }
 

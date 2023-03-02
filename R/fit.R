@@ -200,7 +200,7 @@ setMethod(
 setMethod(
     f = "stvonb_predict",
     signature = c("stvonb", "sf"),
-    definition = function(x, new_data) {
+    definition = function(x, new_data, ages = numeric(0)) {
   ### Check that we have all covariates, if there are covariates in the model
   covar_names<- names_from_formula(formula(x))
 
@@ -219,7 +219,17 @@ setMethod(
   predictions<- predict_linear(x, predictions)
   predictions<- predict_response(x, predictions)
 
-  return(predictions)
+  if( length(ages) == 0 ) {
+    return(predictions)
+  } else {}
+  
+  length_predictions<- length_at_age(predictions, ages)
+  return(
+    list(
+      predictions = predictions,
+      length_predictions = length_predictions
+    )
+  )
 })
 
 
@@ -249,7 +259,7 @@ setMethod(
 setMethod(
     f = "stvonb_predict",
     signature = c("stvonb", "RasterLayer"),
-    definition = function(x, new_data, covariates, time = "model") {
+    definition = function(x, new_data, covariates, time = "model", ages = numeric(0)) {
   if( !requireNamespace("raster", quietly = TRUE) ) {
     stop(
       "Package \"raster\" must be installed to use this function.",
@@ -284,7 +294,7 @@ setMethod(
   covar_names<- names_from_formula(formula(settings(x)))
   if( length(covar_names) == 0 ) {
     # No covariates in model
-    pred<- stvonb_predict(x, prediction_points)
+    pred<- stvonb_predict(x, prediction_points, ages)
   } else if( missing(covariates) && (length(covar_names) != 0) ) {
     # Covariates in model but none supplied
     stop("Missing covariates, please supply them.")
@@ -319,9 +329,11 @@ setMethod(
     )
 
     prediction_points[, paste0(time_name(x), ".a")]<- NULL
-    pred<- stvonb_predict(x, prediction_points)
+    pred<- stvonb_predict(x, prediction_points, ages)
   }
 
+  length_pred<- pred$length_predictions
+  pred<- pred$predictions
   # Convert predictions to stars object
   # should have dimension 4 : x coordinate, y coordinate, time, variable
   var_stars<- lapply(seq_along(c("max", "rate")), function(i) {
@@ -367,27 +379,13 @@ setMethod(
     }
     return(pred_stars)
   })
-
-  if( length(var_stars) == 1 ) {
-    pred_stars<- do.call(
-      c,
-      c(
-        var_stars,
-        var_stars,
-        list(along = "variable")
-      )
+  pred_stars<- do.call(
+    c,
+    c(
+      var_stars,
+      list(along = "variable")
     )
-    pred_stars<- pred_stars[, , , , 1, drop = FALSE]
-    # pred_stars[field, x, y, time, variable]
-  } else {
-    pred_stars<- do.call(
-      c,
-      c(
-        var_stars,
-        list(along = "variable")
-      )
-    )
-  }
+  )
 
   pred_stars[[time_name(x)]]<- NULL
   attr(pred_stars, "dimensions")[[time_name(x)]]$delta<- 1
@@ -395,7 +393,86 @@ setMethod(
   attr(pred_stars, "dimensions")[["variable"]]$values<- c("max", "rate")
   names(pred_stars)[1:6]<- names(values(pred))[1:6]
 
-  return(pred_stars)
+  if( length(ages) == 0 ) {
+    return(pred_stars)
+  } else {}
+
+
+  length_stars<- lapply(seq_along(ages), function(a) {
+    pred_sf_list<- cbind(
+      do.call(
+        cbind,
+        values(length_pred)[, , a]
+      ),
+      locations(length_pred)
+    )
+    pred_sf_list<- lapply(
+      split(
+        pred_sf_list,
+        pred_sf_list[, time_name(x), drop = TRUE]
+      ),
+      stars::st_rasterize,
+      template = stars::st_as_stars(new_data)
+    )
+    pred_sf_list<- lapply(
+      pred_sf_list,
+      `[`,
+      1:2
+    ) # Remove time data array, we'll add it back in as a dimension from
+    # the names of the list
+    if( length(time) == 1 ) {
+      length_stars<- do.call(
+        c,
+        c(
+          pred_sf_list,
+          pred_sf_list,
+          list(along = time_name(x))
+        )
+      )
+      length_stars<- length_stars[, , , 1, drop = FALSE]
+    } else {
+      length_stars<- do.call(
+        c,
+        c(
+          pred_sf_list,
+          list(along = time_name(x))
+        )
+      )
+    }
+    return(length_stars)
+  })
+  if( length(ages) == 1 ) {
+    length_stars<- do.call(
+      c,
+      c(
+        length_stars,
+        length_stars,
+        list(along = "age")
+      )
+    )
+    length_stars<- length_stars[, , , , 1, drop = FALSE]
+  } else {
+    length_stars<- do.call(
+      c,
+      c(
+        length_stars,
+        list(along = "age")
+      )
+    )
+  }
+
+  length_stars[[time_name(x)]]<- NULL
+  attr(length_stars, "dimensions")[[time_name(x)]]$delta<- 1
+  attr(length_stars, "dimensions")[[time_name(x)]]$offset<- min(time)
+  attr(length_stars, "dimensions")[["age"]]$values<- ages
+  names(length_stars)[1:2]<- c("length", "length_se")
+
+  return(
+    list(
+      parameters = pred_stars,
+      length_at_age = length_stars
+    )
+  )
 })
 
 
@@ -676,7 +753,7 @@ predict_response<- function(x, predictions, se = TRUE) {
   # )
   link_function<- list(
     fn = function(x) return(x),
-    gr = function(x) return(0),
+    gr = function(x) return(1),
     he = function(x) return(0)
   )
   for( v in seq(2) ) {
@@ -708,4 +785,79 @@ predict_response<- function(x, predictions, se = TRUE) {
   }
 
   return(predictions)
+}
+
+#' @rdname stvonb_predict
+#'
+#' @name predict_length
+#'
+#' @section Length predictions:
+#' Predictions of mean length using fitted von Bertalanffy curves.
+#'
+#' The predicted values for the maximum average length and growth rate
+#'   are used to predict average length at a given age.
+NULL
+# #' Use predictions of von Bertalanffy parameters to predict length at age.
+# #'
+# #' @param predictions A long_stars object, typically the output of stvonb_predict.
+# #' @param ages Which ages should predictions be made for?
+# #'
+# #' @return A long_stars object with the length-at-age predictions.
+#' @noRd
+length_at_age<- function(predictions, ages) {
+  length_predictions<- new(
+    "long_stars",
+    locations = locations(predictions),
+    var_names = as.character(ages)
+  )
+  values(length_predictions)$w<- NULL
+  values(length_predictions)$w_se<- NULL
+  values(length_predictions)$linear<- NULL
+  values(length_predictions)$linear_se<- NULL
+  names(values(length_predictions))<- c("length", "length_se")
+  if( length(ages) == 0 ) {
+    return(length_predictions)
+  } else {}
+  dimnames(values(length_predictions))[[2]]<- c("age")
+  st_dimensions(values(length_predictions))$age$values<- ages
+  st_dimensions(values(length_predictions))$age$point<- TRUE
+  
+  for( a in seq_along(ages) ) {
+    data<- list(
+      model = "length_at_age",
+      age = ages[[a]]
+    )
+    para<- list(
+      max = 1,
+      rate = 1
+    )
+    length_at_age<- TMB::MakeADFun(
+      data = data,
+      para = para,
+      DLL = "stvonb_TMB",
+      silent = TRUE
+    )
+    values(length_predictions)$length[, a]<- Vectorize(
+      function(x, y) return(length_at_age$fn(c(x, y))),
+      SIMPLIFY = "array"
+    )(values(predictions)$linear[, 1], values(predictions)$linear[, 2])
+
+    second_order_se<- Vectorize(
+      function(max, max_se, rate, rate_se) {
+        se<- sqrt(
+          sum(length_at_age$gr(c(max, rate))^2 * c(max_se, rate_se)^2)
+        )
+        return(as.numeric(se))
+      },
+      SIMPLIFY = "array"
+    )
+    values(length_predictions)$length_se[, a]<- second_order_se(
+      values(predictions)$linear[, 1],
+      values(predictions)$linear_se[, 1],
+      values(predictions)$linear[, 2],
+      values(predictions)$linear_se[, 2]
+    )
+  }
+
+  return(length_predictions)
 }

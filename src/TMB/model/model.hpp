@@ -147,15 +147,7 @@ Type stvonb_model(objective_function<Type>* obj) {
   DATA_IVECTOR(pred_t);
   PARAMETER_ARRAY(pred_re);
 
-  vector<vector<Type> > reporting_w(pred_re.dim(0));
-  vector<vector<Type> > reporting_mu(pred_re.dim(0));
-  vector<matrix<Type> > reporting_cov(pred_re.dim(0));
-
-  nll -= process.prediction_loglikelihood(pred_g, pred_t, pred_re, ts, reporting_w, reporting_mu, reporting_cov);
-
-  REPORT(reporting_w);
-  REPORT(reporting_mu);
-  REPORT(reporting_cov);
+  nll -= process.prediction_loglikelihood(pred_g, pred_t, pred_re, ts);
   /*
   End of prediction component
   */

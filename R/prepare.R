@@ -118,7 +118,7 @@ stvonb_prepare_process<- function(
   time_effects(process)<- stars::st_as_stars(
     list(
       w = array(
-        0,
+        1,
         dim = c(
           length(time_seq),
           2
@@ -151,7 +151,7 @@ stvonb_prepare_process<- function(
   pg_re(process)<- stars::st_as_stars(
     list(
       w = array(
-        0,
+        1,
         dim = c(
           nrow(uniq_nodes),
           length(time_seq),
@@ -209,6 +209,7 @@ stvonb_prepare_process<- function(
     var_names = c("max", "rate")
   )
   names(values(tg_re(process)))[[2]]<- "se"
+  values(tg_re(process))$w[]<- 1
   values(tg_re(process))$linear<- NULL
   values(tg_re(process))$linear_se<- NULL
   values(tg_re(process))$response<- NULL

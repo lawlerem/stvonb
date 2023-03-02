@@ -7,13 +7,14 @@
 \alias{predict_w}
 \alias{predict_linear}
 \alias{predict_response}
+\alias{predict_length}
 \title{Use a fitted model to predict.}
 \usage{
 stvonb_predict(x, new_data, ...)
 
-\S4method{stvonb_predict}{stvonb,sf}(x, new_data)
+\S4method{stvonb_predict}{stvonb,sf}(x, new_data, ages = numeric(0))
 
-\S4method{stvonb_predict}{stvonb,RasterLayer}(x, new_data, covariates, time = "model")
+\S4method{stvonb_predict}{stvonb,RasterLayer}(x, new_data, covariates, time = "model", ages = numeric(0))
 }
 \arguments{
 \item{x}{A fitted model}
@@ -108,5 +109,13 @@ The predicted value for the response mean is the linear predictor transformed
 to the scale of data by applying the link function. The standard error for
 the prediction is obtained via the delta method using a second-order Taylor
 approximation.
+}
+
+\section{Length predictions}{
+
+Predictions of mean length using fitted von Bertalanffy curves.
+
+The predicted values for the maximum average length and growth rate
+are used to predict average length at a given age.
 }
 

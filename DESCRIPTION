@@ -1,6 +1,6 @@
 Package: stvonb
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Version: 0.0.1
 Authors@R: 
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
@@ -9,9 +9,9 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
-    mcreportRTMB (>= 0.1.1),
-    nnspline (>= 1.3.2),
-    robustifyRTMB (>= 0.0.1),
+    mcreportRTMB (>= 0.1.3),
+    nnspline (>= 1.4.1),
+    robustifyRTMB (>= 0.1.0),
     RTMB,
     sf,
     stars,
@@ -20,3 +20,5 @@ Remotes:
     lawlerem/mcreportRTMB,
     lawlerem/nnspline,
     lawlerem/robustifyRTMB
+Depends: 
+    R (>= 4.1.0)

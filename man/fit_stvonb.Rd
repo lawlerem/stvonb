@@ -7,14 +7,30 @@
 fit_stvonb(data, nodes = data, ...)
 }
 \arguments{
-\item{data}{An sf data.frame with point geometries, an age column, and a length column.}
+\item{data}{An sf data.frame with point geometries, an age column, and a length
+column.}
 
-\item{nodes}{Either an sf data.frame giving the point location of nodes or an integer giving the number of nodes which will be smartly chosen.}
+\item{nodes}{Either an sf data.frame giving the point location of nodes or an integer
+giving the number of nodes which will be smartly chosen.}
 
-\item{...}{Additional arguments, particularly those to pass to nnspline::create_nnspline, robustifyRTMB::robustly_optimize, and mcreportRTMB::mcreport.}
+\item{...}{Additional arguments, particularly those to pass to
+nnspline::create_nnspline, robustifyRTMB::robustly_optimize, and
+mcreportRTMB::mcreport.}
 }
 \value{
-A list containing the model fit, a template spline, and mcreported spline realizations
+A list containing:
+\itemize{
+\item robust_optimization
+The output of robustifyRTMB::robustly_optimize
+\item template_spline
+An nnspline objet used to hold the nodes and node graph used for
+the model
+\item mcreport
+The output of mcreportRTMB::mcreport for the spline parameters,
+node values, and mean rate, max length, and length zero age.
+\item call
+The function call used.
+}
 }
 \description{
 Fit a von Bertalanffy growth curve with spatially  varying parameters.

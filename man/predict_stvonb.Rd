@@ -13,10 +13,11 @@ predict_stvonb(fit, raster, age, quantiles = c(0.05, 0.5, 0.95))
 
 \item{age}{Ages to use for length-at-age predictions, if any.}
 
-\item{quantiles}{The quantiles to predict. Defaults to a 95\% confidence interval around the mean}
+\item{quantiles}{The quantiles to predict. Defaults to c(0.05, 0.5, 0.95).}
 }
 \value{
-A list with the spatial von Bertalanffy parameter predictions and spatial length-at-age predictions
+A list with the spatial von Bertalanffy parameter predictions and
+spatial length-at-age predictions
 }
 \description{
 Predict spatial growth curves

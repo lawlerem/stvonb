@@ -32,7 +32,7 @@ fit_stvonb<- function(
 
     if( "sf" %in% (nodes |> class()) ) {
         nodes<- nodes |> sf::st_coordinates() |> unique()
-    } else if( nodes |> is.numeric() ) {
+    } else if( nodes |> is.integer() ) {
         nodes<- nnspline::nnodes(
             data |> sf::st_coordinates(),
             n_nodes = max(1, nodes |> floor()),
